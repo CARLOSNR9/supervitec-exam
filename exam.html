@@ -5,10 +5,7 @@
   <title>SuperviTEC PRO — Examen</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Favicon / Theme -->
   <link rel="icon" type="image/png" sizes="32x32" href="logo.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="logo.png">
-  <link rel="apple-touch-icon" href="logo.png">
   <meta name="theme-color" content="#0f172a">
 
   <!-- PDF libs -->
@@ -16,20 +13,25 @@
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.1/dist/jspdf.plugin.autotable.min.js"></script>
 
   <style>
-    :root { --bg:#0f172a; --card:#0b1220; --txt:#e5e7eb; --muted:#94a3b8; --accent:#22c55e; --danger:#ef4444; --bar:#1f2937; --gold:#fbbf24; }
+    :root { --bg:#0f172a; --card:#0b1220; --txt:#e5e7eb; --muted:#94a3b8; --accent:#22c55e; --danger:#ef4444; --bar:#1f2937; --gold:#fbbf24; --ghost:#334155; }
     *{ box-sizing:border-box; font-family:system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial; }
     body{ margin:0; background:linear-gradient(135deg,#0b1220,#101827 40%,#0b1220); color:var(--txt); min-height:100vh; display:flex; flex-direction:column; }
-    header{ display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid #1f2937; background:rgba(11,18,32,.6); backdrop-filter:blur(6px); position:sticky; top:0; z-index:5; }
+    header{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 14px; border-bottom:1px solid #1f2937; background:rgba(11,18,32,.6); backdrop-filter:blur(6px); position:sticky; top:0; z-index:5; }
     .brand{ display:flex; align-items:center; gap:10px; font-weight:700; letter-spacing:.3px; }
     .brand img{ width:36px; height:auto; user-select:none; -webkit-user-drag:none; filter: drop-shadow(0 6px 16px rgba(251,191,36,.28)); }
-    .brand span{ opacity:.95 }
+    .brand span{ opacity:.95; white-space:nowrap; }
+    .right{ display:flex; align-items:center; gap:8px; }
+    .who{ font-size:12px; color:#cbd5e1; background:#0f172a; border:1px solid #1f2937; border-radius:999px; padding:6px 10px; max-width:35vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .timer{ font-variant-numeric:tabular-nums; background:#111827; padding:8px 12px; border-radius:10px; border:1px solid #1f2937; }
+    .btn-logout{ background:#0b1220; color:#e5e7eb; border:1px solid var(--ghost); border-radius:10px; padding:8px 10px; cursor:pointer; font-weight:600; }
+    .btn-logout:hover{ filter:brightness(1.05); }
+
     main{ display:grid; place-items:center; padding:18px; flex:1; }
     .card{ width:100%; max-width:820px; background:var(--card); padding:24px; border-radius:18px; border:1px solid #1f2937; box-shadow:0 15px 40px rgba(0,0,0,.35); }
     .progress{ display:flex; align-items:center; gap:10px; margin-bottom:16px; font-size:14px; color:#cbd5e1; }
     .bar{ position:relative; height:10px; background:#0f172a; border:1px solid #1f2937; border-radius:999px; overflow:hidden; flex:1; }
     .bar > span{ position:absolute; left:0; top:0; bottom:0; width:0%; background:linear-gradient(90deg,#22c55e,#16a34a); }
-    h2{ margin:10px 0 16px; font-size:18px; line-height:1.4; }
+    h2{ margin:10px 0 16px; font-size:18px; line-height:1.4; user-select:none; }
     .opts{ display:grid; gap:10px; }
     .opt{ border:1px solid #334155; background:#0f172a; border-radius:12px; padding:12px; display:flex; gap:10px; align-items:flex-start; cursor:pointer; }
     .opt input{ margin-top:3px; transform:scale(1.15); }
@@ -42,10 +44,17 @@
     .hidden{ display:none; }
     .center{ text-align:center; }
     .score{ font-size:44px; font-weight:800; margin:6px 0 2px; }
-    .tag{ font-size:12px; background:#0f172a; border:1px solid #23314a; border-radius:999px; padding:4px 8px; display:inline-block; margin:2px; }
     .download{ display:flex; gap:10px; justify-content:center; margin-top:14px; flex-wrap:wrap; }
     .footer{ text-align:center; padding:10px 12px; color:#7c8aa3; font-size:12px; border-top:1px solid #1f2937; }
-    @media (min-width:640px){ .brand img{ width:42px; } }
+
+    /* Resultado (línea + píldoras como tu captura 2) */
+    .mini-line{ color:#cbd5e1; margin-top:4px; margin-bottom:8px; font-size:13px; }
+    .pills{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:6px; }
+    .pill{ font-size:12px; color:#e5e7eb; background:#0f172a; border:1px solid #1f2937; padding:6px 10px; border-radius:999px; }
+
+    /* Aviso anti-trampa */
+    .anti{ position:fixed; top:12px; left:0; right:0; margin:auto; width:fit-content; background:rgba(239,68,68,.18); border:1px solid #ef4444; color:#fecaca; padding:10px 14px; border-radius:12px; font-size:13px; z-index:9999; box-shadow:0 8px 20px rgba(0,0,0,.35); backdrop-filter: blur(6px); }
+    .anti strong{ color:#fff; }
   </style>
 </head>
 <body>
@@ -54,7 +63,11 @@
       <img src="logo.png" alt="SuperviTEC PRO" />
       <span>SuperviTEC PRO · Evaluación Técnica</span>
     </div>
-    <div id="timer" class="timer">60:00</div>
+    <div class="right">
+      <div class="who" id="who">Candidato: —</div>
+      <div id="timer" class="timer">20:00</div>
+      <button id="btn-logout" class="btn-logout" title="Cerrar sesión">Cerrar sesión</button>
+    </div>
   </header>
 
   <main>
@@ -76,100 +89,186 @@
         <div class="muted">Sin retroalimentación inmediata y <strong>sin botón “Anterior”</strong>.</div>
       </div>
 
+      <!-- RESULTADO -->
       <div id="result-view" class="hidden center">
         <h2>Examen entregado</h2>
         <div class="score" id="score-pct">0%</div>
-        <div id="score-detail" class="muted"></div>
-        <div id="tags"></div>
+
+        <div id="mini-line" class="mini-line"></div>
+        <div id="block-pills" class="pills"></div>
+
         <div class="download">
-          <button id="btn-json">Descargar reporte (JSON)</button>
-          <button id="btn-csv">Descargar reporte (CSV)</button>
           <button id="btn-pdf">Descargar informe (PDF)</button>
         </div>
-        <p class="muted">Comparte el reporte con el comité para revisión detallada.</p>
+        <p class="muted">Se intentará enviar una copia al comité por correo.</p>
       </div>
     </div>
   </main>
 
-  <div class="footer">Tiempo total: 60 minutos · No refresques ni cierres la pestaña</div>
+  <div class="footer">Tiempo total: 20 minutos · No refresques ni cierres la pestaña</div>
 
 <script>
-/* ====== Sesión ====== */
+/* ====== Sesión + Nombre ====== */
 const token = localStorage.getItem('sv_exam_token');
 const startedAt = parseInt(localStorage.getItem('sv_exam_startedAt') || '0', 10);
 const expiresAt = parseInt(localStorage.getItem('sv_exam_expiresAt') || '0', 10);
-const duration = parseInt(localStorage.getItem('sv_exam_duration') || '60', 10);
+const duration = parseInt(localStorage.getItem('sv_exam_duration') || '20', 10); // 20 por defecto
 const pwdOk = localStorage.getItem('sv_exam_pwd_ok') === '1';
-if (!token || !startedAt || !expiresAt || !pwdOk) {
+const candidateName = (localStorage.getItem('sv_exam_name') || '').trim();
+if (!token || !startedAt || !expiresAt || !pwdOk || candidateName.length<3) {
   alert('Sesión no válida o expirada. Vuelve a la pantalla de acceso.');
   window.location.href = 'index.html';
 }
+document.getElementById('who').textContent = `Candidato: ${candidateName}`;
 
-/* ====== Banco EXACTO de 40 preguntas ======
-   Distribución:
-   - IA: 18  (9–20, 43,45,46,47,49,50)
-   - Lógica: 8  (27–32, 41,42)
-   - Procesamiento: 6 (21–26)
-   - Dashboards: 4 (71–74)
-   - Comportamentales: 4 (33–36)
-=========================================== */
+/* ====== Utilidades de sesión ====== */
+function clearExamStorage(){
+  for (let i=localStorage.length-1; i>=0; i--){
+    const k = localStorage.key(i);
+    if (k && k.startsWith('sv_exam_')) localStorage.removeItem(k);
+  }
+}
+
+/* ====== Anti-trampa ====== */
+const MAX_FREE_VIOLATIONS = 2;
+const PENALTY_POINTS_PER_EVENT = 0.5;
+let violationCount = 0;
+let lostFocusStarted = null;
+let lostFocusMs = 0;
+let examFinished = false;
+
+function showAnti(msg){
+  if (examFinished) return;
+  const el = document.createElement('div');
+  el.className = 'anti';
+  el.innerHTML = `⚠️ <strong>Atención</strong>: ${msg}`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+function handleViolation(label){
+  if (examFinished) return;
+  violationCount++;
+  if (violationCount <= MAX_FREE_VIOLATIONS){
+    showAnti(`Mantén la pestaña activa. Salida detectada (${label}). Próximas podrán ser penalizadas.`);
+  } else {
+    showAnti(`Salida detectada (${label}). Se ha aplicado una penalización.`);
+  }
+}
+
+/* Handlers para poder removerlos luego */
+function onVisibilityChange(){
+  if (document.hidden){
+    if (lostFocusStarted===null) lostFocusStarted = Date.now();
+    handleViolation('cambio de pestaña');
+  } else {
+    if (lostFocusStarted!==null){ lostFocusMs += (Date.now()-lostFocusStarted); lostFocusStarted=null; }
+  }
+}
+function onWindowBlur(){
+  if (lostFocusStarted===null) lostFocusStarted = Date.now();
+  handleViolation('ventana en segundo plano');
+}
+function onWindowFocus(){
+  if (lostFocusStarted!==null){ lostFocusMs += (Date.now()-lostFocusStarted); lostFocusStarted=null; }
+}
+function onContextMenu(e){ e.preventDefault(); }
+function onCopy(e){ e.preventDefault(); handleViolation('copiar'); }
+function onKeyDown(e){
+  const k = e.key.toLowerCase();
+  if (k === 'printscreen' || (e.ctrlKey && (k==='p' || k==='s')) || (e.metaKey && (k==='p' || k==='s'))) {
+    e.preventDefault();
+    handleViolation(k==='printscreen'?'captura de pantalla':'atajo no permitido');
+  }
+  if (k === 'f12' || (e.ctrlKey && e.shiftKey && (k==='i' || k==='j' || k==='c'))){
+    e.preventDefault();
+    handleViolation('devtools');
+  }
+}
+function onBeforeUnload(e){ e.preventDefault(); e.returnValue = ''; }
+
+/* Registrar listeners */
+document.addEventListener('visibilitychange', onVisibilityChange);
+window.addEventListener('blur', onWindowBlur);
+window.addEventListener('focus', onWindowFocus);
+document.addEventListener('contextmenu', onContextMenu);
+document.addEventListener('copy', onCopy);
+document.addEventListener('keydown', onKeyDown);
+window.addEventListener('beforeunload', onBeforeUnload);
+
+/* Limpieza total de proctoring */
+function cleanupProctoring(){
+  examFinished = true;
+  document.removeEventListener('visibilitychange', onVisibilityChange);
+  window.removeEventListener('blur', onWindowBlur);
+  window.removeEventListener('focus', onWindowFocus);
+  document.removeEventListener('contextmenu', onContextMenu);
+  document.removeEventListener('copy', onCopy);
+  document.removeEventListener('keydown', onKeyDown);
+  window.removeEventListener('beforeunload', onBeforeUnload);
+  document.querySelectorAll('.anti').forEach(el => el.remove());
+}
+
+/* ====== Botón Cerrar sesión ====== */
+document.getElementById('btn-logout').addEventListener('click', () => {
+  if (!confirm('¿Cerrar sesión? Se perderá el progreso no entregado.')) return;
+  cleanupProctoring();
+  clearInterval(timerId);
+  clearExamStorage();
+  try { localStorage.removeItem(`sv_exam_state_${token}`); } catch {}
+  window.location.href = 'index.html';
+});
+
+/* ====== Banco de preguntas (igual al tuyo) ====== */
 const QUESTION_BANK = [
-  // IA (12 base)
-  {id:9,  block:"IA", prompt:"Un sistema de IA conversacional orientado a normativa debe:", options:["Responder con creatividad libre","Responder con citas normativas verificables","Ignorar referencias técnicas"], correct:1, explain:"En un asistente normativo, la trazabilidad es clave (citas verificables y posibilidad de 'no answer')."},
-  {id:10, block:"IA", prompt:"¿Cuál framework se usa en NLP para procesamiento de texto?", options:["TensorFlow","spaCy","Power BI"], correct:1, explain:"spaCy es un framework de NLP; TensorFlow es más general y Power BI es de visualización."},
-  {id:11, block:"IA", prompt:"Hugging Face es conocido por:", options:["Dashboards de visualización","Modelos preentrenados de NLP","Herramientas de diseño CAD"], correct:1, explain:"Hugging Face aloja modelos y datasets de NLP/IA."},
-  {id:12, block:"IA", prompt:"OpenAI API permite:", options:["Generar y consultar lenguaje natural con modelos LLM","Procesar imágenes de obras","Calcular presupuestos de materiales"], correct:0, explain:"La API provee modelos de lenguaje para tareas de texto."},
-  {id:13, block:"IA", prompt:"¿Qué significa RAG (Retrieval-Augmented Generation)?", options:["Sistema de recuperación para enriquecer la generación","Técnica de compresión de datos","Algoritmo de cifrado"], correct:0, explain:"RAG usa recuperación de contexto para generar respuestas fieles."},
-  {id:14, block:"IA", prompt:"¿Qué es un embedding?", options:["Representación vectorial de texto para medir similitud","Un bloque de cemento","Una regla de seguridad"], correct:0, explain:"Embeddings capturan similitud semántica."},
-  {id:15, block:"IA", prompt:"¿Qué métrica se usa en recuperación de información?", options:["Recall@k","RMSE","Perplejidad"], correct:0, explain:"Recall@k, MRR y nDCG son métricas típicas en IR."},
-  {id:16, block:"IA", prompt:"En LLMs, la temperatura controla:", options:["Velocidad de cómputo","Aleatoriedad de las respuestas","El tamaño del dataset"], correct:1, explain:"Temperaturas bajas reducen aleatoriedad y alucinaciones."},
-  {id:17, block:"IA", prompt:"Para reducir alucinaciones en RAG se debe:", options:["Subir la temperatura","Responder siempre con fuente y permitir 'no answer'","Usar prompts más largos sin límite"], correct:1, explain:"Citas/‘no answer’ aumentan fidelidad."},
-  {id:18, block:"IA", prompt:"¿Cuál es la ventaja de RAG frente al fine-tuning?", options:["No requiere modificar los pesos del modelo","Cambia permanentemente el modelo","Consume más recursos"], correct:0, explain:"RAG agrega conocimiento sin reentrenar."},
-  {id:19, block:"IA", prompt:"¿Qué modelos de LLM se citan como aplicables en SuperviTEC PRO?", options:["GPT, Claude, Llama","Excel, Matlab, AutoCAD","PowerPoint, Word, Access"], correct:0, explain:"Son familias de LLM usados en producción."},
-  {id:20, block:"IA", prompt:"Una ontología en gestión de conocimiento sirve para:", options:["Representar relaciones entre conceptos normativos","Construir dashboards","Optimizar costos de materiales"], correct:0, explain:"Ontologías estructuran el dominio."},
+  {id:9,  block:"IA", prompt:"Un sistema de IA conversacional orientado a normativa debe:", options:["Responder con creatividad libre","Responder con citas normativas verificables","Ignorar referencias técnicas"], correct:1, explain:"En un asistente normativo, la trazabilidad es clave (citas verificables y 'no answer')."},
+  {id:10, block:"IA", prompt:"¿Cuál framework se usa en NLP para procesamiento de texto?", options:["TensorFlow","spaCy","Power BI"], correct:1, explain:"spaCy es un framework de NLP."},
+  {id:11, block:"IA", prompt:"Hugging Face es conocido por:", options:["Dashboards de visualización","Modelos preentrenados de NLP","Herramientas de diseño CAD"], correct:1, explain:"Modelos y datasets NLP/IA."},
+  {id:12, block:"IA", prompt:"OpenAI API permite:", options:["Generar y consultar lenguaje natural con modelos LLM","Procesar imágenes de obras","Calcular presupuestos de materiales"], correct:0, explain:"Modelos de lenguaje para texto."},
+  {id:13, block:"IA", prompt:"¿Qué significa RAG (Retrieval-Augmented Generation)?", options:["Sistema de recuperación para enriquecer la generación","Técnica de compresión de datos","Algoritmo de cifrado"], correct:0, explain:"Recupera contexto para generar."},
+  {id:14, block:"IA", prompt:"¿Qué es un embedding?", options:["Representación vectorial de texto para medir similitud","Un bloque de cemento","Una regla de seguridad"], correct:0, explain:"Similitud semántica."},
+  {id:15, block:"IA", prompt:"¿Qué métrica se usa en recuperación de información?", options:["Recall@k","RMSE","Perplejidad"], correct:0, explain:"Métrica típica de IR."},
+  {id:16, block:"IA", prompt:"En LLMs, la temperatura controla:", options:["Velocidad de cómputo","Aleatoriedad de las respuestas","El tamaño del dataset"], correct:1, explain:"Más baja → menos aleatorio."},
+  {id:17, block:"IA", prompt:"Para reducir alucinaciones en RAG se debe:", options:["Subir la temperatura","Responder siempre con fuente y permitir 'no answer'","Usar prompts más largos sin límite"], correct:1, explain:"Citas + 'no answer'."},
+  {id:18, block:"IA", prompt:"¿Cuál es la ventaja de RAG frente al fine-tuning?", options:["No requiere modificar los pesos del modelo","Cambia permanentemente el modelo","Consume más recursos"], correct:0, explain:"Agrega conocimiento sin reentrenar."},
+  {id:19, block:"IA", prompt:"¿Qué modelos de LLM se citan como aplicables en SuperviTEC PRO?", options:["GPT, Claude, Llama","Excel, Matlab, AutoCAD","PowerPoint, Word, Access"], correct:0, explain:"Familias de LLM."},
+  {id:20, block:"IA", prompt:"Una ontología en gestión de conocimiento sirve para:", options:["Representar relaciones entre conceptos normativos","Construir dashboards","Optimizar costos de materiales"], correct:0, explain:"Estructura del dominio."},
 
-  // Lógica (8)
-  {id:27, block:"Logica", prompt:"Salida del pseudocódigo: x=5; if x>3 then print('Sí') else print('No')", options:["No","Sí","Error"], correct:1, explain:"5>3 ⇒ imprime 'Sí'."},
-  {id:28, block:"Logica", prompt:"¿Qué estructura permite ejecutar instrucciones repetidas?", options:["Condicional","Bucle","Variable"], correct:1, explain:"Los bucles repiten instrucciones."},
-  {id:29, block:"Logica", prompt:"En programación, un 'array' se usa para:", options:["Guardar múltiples valores en una sola variable","Hacer operaciones matemáticas","Crear interfaces gráficas"], correct:0, explain:"Array agrupa elementos indexados."},
-  {id:30, block:"Logica", prompt:"El operador lógico AND devuelve verdadero cuando:", options:["Al menos una condición es verdadera","Todas las condiciones son verdaderas","Ninguna condición es verdadera"], correct:1, explain:"AND exige todas verdaderas."},
-  {id:31, block:"Logica", prompt:"En Python, la instrucción para imprimir en pantalla es:", options:["echo()","print()","display()"], correct:1, explain:"print() es la función estándar."},
-  {id:32, block:"Logica", prompt:"Si un algoritmo no termina nunca, se dice que tiene:", options:["Complejidad baja","Bucle infinito","Error de sintaxis"], correct:1, explain:"Bucle infinito = no finaliza."},
-  {id:41, block:"Logica", prompt:"Dada una lista L, ¿qué hace 'for x in L'?", options:["Itera elemento por elemento","Elimina duplicados","Ordena la lista"], correct:0, explain:"Recorre los elementos de L."},
-  {id:42, block:"Logica", prompt:"¿Qué estructura usar para mapear claves a valores?", options:["Lista","Diccionario/Mapa","Tupla"], correct:1, explain:"Diccionarios almacenan pares clave-valor."},
+  {id:27, block:"Logica", prompt:"Salida del pseudocódigo: x=5; if x>3 then print('Sí') else print('No')", options:["No","Sí","Error"], correct:1, explain:"5>3 ⇒ 'Sí'."},
+  {id:28, block:"Logica", prompt:"¿Qué estructura permite ejecutar instrucciones repetidas?", options:["Condicional","Bucle","Variable"], correct:1, explain:"Bucle repite."},
+  {id:29, block:"Logica", prompt:"En programación, un 'array' se usa para:", options:["Guardar múltiples valores en una sola variable","Hacer operaciones matemáticas","Crear interfaces gráficas"], correct:0, explain:"Agrupa elementos."},
+  {id:30, block:"Logica", prompt:"El operador lógico AND devuelve verdadero cuando:", options:["Al menos una condición es verdadera","Todas las condiciones son verdaderas","Ninguna condición es verdadera"], correct:1, explain:"AND requiere todas verdaderas."},
+  {id:31, block:"Logica", prompt:"En Python, la instrucción para imprimir en pantalla es:", options:["echo()","print()","display()"], correct:1, explain:"print()."},
+  {id:32, block:"Logica", prompt:"Si un algoritmo no termina nunca, se dice que tiene:", options:["Complejidad baja","Bucle infinito","Error de sintaxis"], correct:1, explain:"No finaliza."},
+  {id:41, block:"Logica", prompt:"Dada una lista L, ¿qué hace 'for x in L'?", options:["Itera elemento por elemento","Elimina duplicados","Ordena la lista"], correct:0, explain:"Recorre L."},
+  {id:42, block:"Logica", prompt:"¿Qué estructura usar para mapear claves a valores?", options:["Lista","Diccionario/Mapa","Tupla"], correct:1, explain:"Pares clave-valor."},
 
-  // Procesamiento (6)
-  {id:21, block:"Procesamiento", prompt:"El primer paso en un pipeline RAG es:", options:["Embedding","Chunking","Ranking"], correct:1, explain:"Primero se divide el texto en chunks."},
-  {id:22, block:"Procesamiento", prompt:"¿Qué técnica se usa para digitalizar normas escaneadas?", options:["OCR","JSON","SQL"], correct:0, explain:"OCR extrae texto de imágenes/PDF escaneados."},
+  {id:21, block:"Procesamiento", prompt:"El primer paso en un pipeline RAG es:", options:["Embedding","Chunking","Ranking"], correct:1, explain:"Primero chunking."},
+  {id:22, block:"Procesamiento", prompt:"¿Qué técnica se usa para digitalizar normas escaneadas?", options:["OCR","JSON","SQL"], correct:0, explain:"OCR para imagen/PDF."},
   {id:23, block:"Procesamiento", prompt:"Para crear un buscador de normas, el contenido de PDFs debe ser:", options:["Indexado con embeddings","Guardado como imagen","Enviado sin procesar"], correct:0, explain:"Indexación semántica."},
-  {id:24, block:"Procesamiento", prompt:"¿Qué componente asegura trazabilidad de cambios normativos?", options:["Versionado","Tokenización","Visualización"], correct:0, explain:"Versionado documenta cambios y fechas."},
-  {id:25, block:"Procesamiento", prompt:"¿Qué permite un API de consulta normativa?", options:["Integrar IA con apps móviles y web","Crear reportes manuales","Sustituir supervisores en obra"], correct:0, explain:"Exponer endpoints para consulta."},
-  {id:26, block:"Procesamiento", prompt:"En un dashboard, ¿qué indicador es clave?", options:["Número de contratos firmados","% de hallazgos cerrados a tiempo","Ventas de materiales"], correct:1, explain:"KPI directo de efectividad."},
+  {id:24, block:"Procesamiento", prompt:"¿Qué componente asegura trazabilidad de cambios normativos?", options:["Versionado","Tokenización","Visualización"], correct:0, explain:"Historial de cambios."},
+  {id:25, block:"Procesamiento", prompt:"¿Qué permite un API de consulta normativa?", options:["Integrar IA con apps móviles y web","Crear reportes manuales","Sustituir supervisores en obra"], correct:0, explain:"Endpoints para consulta."},
+  {id:26, block:"Procesamiento", prompt:"En un dashboard, ¿qué indicador es clave?", options:["Número de contratos firmados","% de hallazgos cerrados a tiempo","Ventas de materiales"], correct:1, explain:"KPI de cierre."},
 
-  // Dashboards (4)
-  {id:71, block:"Dash", prompt:"Para ver evolución de hallazgos cerrados en el tiempo, usarías:", options:["Gráfico de líneas","Gráfico circular","Mapa de calor global"], correct:0, explain:"Series temporales → líneas."},
-  {id:72, block:"Dash", prompt:"Para la distribución de criticidad (Alta/Media/Baja), usarías:", options:["Torta/Barras apiladas","Mapa coroplético","Diagrama de dispersión"], correct:0, explain:"Distribución categórica."},
+  {id:71, block:"Dash", prompt:"Para ver evolución de hallazgos cerrados en el tiempo, usarías:", options:["Gráfico de líneas","Gráfico circular","Mapa de calor global"], correct:0, explain:"Series → líneas."},
+  {id:72, block:"Dash", prompt:"Para la distribución de criticidad (Alta/Media/Baja), usarías:", options:["Torta/Barras apiladas","Mapa coroplético","Diagrama de dispersión"], correct:0, explain:"Categórico."},
   {id:73, block:"Dash", prompt:"¿Qué es vital antes de alimentar modelos con datos del dashboard?", options:["Limpieza y validación de datos","Elegir colores de la UI","Exportar a PDF"], correct:0, explain:"Calidad de datos."},
-  {id:74, block:"Dash", prompt:"Un filtro mínimo esperable en el panel es:", options:["Obra y mes","Tema del chat","Sistema operativo"], correct:0, explain:"Filtros por obra/periodo."},
+  {id:74, block:"Dash", prompt:"Un filtro mínimo esperable en el panel es:", options:["Obra y mes","Tema del chat","Sistema operativo"], correct:0, explain:"Obra/periodo."},
 
-  // Comportamentales (4)
-  {id:33, block:"Comport", prompt:"Si en una entrega urgente detectas un error en tu código, ¿qué harías?", options:["Ignorarlo para cumplir con el plazo","Avisar y corregir aunque implique retraso","Esperar que nadie lo note"], correct:1, explain:"Integridad y calidad."},
+  {id:33, block:"Comport", prompt:"Si en una entrega urgente detectas un error en tu código, ¿qué harías?", options:["Ignorarlo para cumplir con el plazo","Avisar y corregir aunque implique retraso","Esperar que nadie lo note"], correct:1, explain:"Integridad."},
   {id:34, block:"Comport", prompt:"En trabajo remoto, lo más importante para el equipo es:", options:["Conectarse siempre en videollamada","Comunicación clara y cumplimiento de entregas","Revisar redes sociales juntos"], correct:1, explain:"Resultados y comunicación."},
   {id:35, block:"Comport", prompt:"Si un cliente pide alterar un reporte para ocultar un incumplimiento, lo correcto es:", options:["Aceptar para mantener la relación","Negarse y explicar consecuencias legales","Ignorarlo y no reportar nada"], correct:1, explain:"Ética y cumplimiento."},
-  {id:36, block:"Comport", prompt:"Cuando trabajas bajo presión, tu primera estrategia debe ser:", options:["Organizar tareas y priorizar","Dejar de trabajar","Culpar a otros"], correct:0, explain:"Priorización y foco."},
+  {id:36, block:"Comport", prompt:"Cuando trabajas bajo presión, tu primera estrategia debe ser:", options:["Organizar tareas y priorizar","Dejar de trabajar","Culpar a otros"], correct:0, explain:"Priorización."},
 
-  // IA (6 casos prácticos)
-  {id:43, block:"IA", prompt:"El dashboard muestra 40% de hallazgos críticos sin cierre a tiempo. ¿Qué acción priorizas?", options:["Revisar trazabilidad y exigir plan a contratistas","Cambiar color de los gráficos","Esperar el próximo periodo"], correct:0, explain:"Acción correctiva basada en KPI crítico."},
+  {id:43, block:"IA", prompt:"El dashboard muestra 40% de hallazgos críticos sin cierre a tiempo. ¿Qué acción priorizas?", options:["Revisar trazabilidad y exigir plan a contratistas","Cambiar color de los gráficos","Esperar el próximo periodo"], correct:0, explain:"Acción correctiva."},
   {id:45, block:"IA", prompt:"Consulta: “¿Qué norma regula resistencia del concreto en columnas?” Respuesta esperada:", options:["Cita exacta de la NSR-10 con capítulo y página","Explicación libre sin referencias","Recomendación de materiales comerciales"], correct:0, explain:"Cita verificable."},
-  {id:46, block:"IA", prompt:"El sistema recupera 5 pasajes; solo 2 son relevantes. ¿Qué métrica evalúas?", options:["Recall@k","RMSE","BLEU"], correct:0, explain:"Métrica de recuperación."},
-  {id:47, block:"IA", prompt:"Hallazgo: “Ausencia de señalización en excavación profunda”. ¿Categoría adecuada?", options:["Seguridad","Estructura","Eléctrico"], correct:0, explain:"Señalización → seguridad humana."},
-  {id:49, block:"IA", prompt:"Supervisor consulta sin internet. ¿Qué solución debe tener el sistema?", options:["Funcionalidad offline con sincronización","Aviso de error permanente","Cerrar la aplicación"], correct:0, explain:"Soporte offline-first para campo."},
-  {id:50, block:"IA", prompt:"Si RETIE y RITEL se mezclan sin etiquetas claras, ¿qué técnica ayuda?", options:["Ontologías/taxonomías normativas","PowerPoint","Gráficos circulares"], correct:0, explain:"Estructurar el dominio para separar fuentes."}
+  {id:46, block:"IA", prompt:"El sistema recupera 5 pasajes; solo 2 son relevantes. ¿Qué métrica evalúas?", options:["Recall@k","RMSE","BLEU"], correct:0, explain:"Recuperación."},
+  {id:47, block:"IA", prompt:"Hallazgo: “Ausencia de señalización en excavación profunda”. ¿Categoría adecuada?", options:["Seguridad","Estructura","Eléctrico"], correct:0, explain:"Seguridad humana."},
+  {id:49, block:"IA", prompt:"Supervisor consulta sin internet. ¿Qué solución debe tener el sistema?", options:["Funcionalidad offline con sincronización","Aviso de error permanente","Cerrar la aplicación"], correct:0, explain:"Offline-first."},
+  {id:50, block:"IA", prompt:"Si RETIE y RITEL se mezclan sin etiquetas claras, ¿qué técnica ayuda?", options:["Ontologías/taxonomías normativas","PowerPoint","Gráficos circulares"], correct:0, explain:"Estructurar dominio."}
 ];
-
 const TOTAL_Q = 40;
 
-/* ====== RNG con semilla (orden aleatorio por candidato) ====== */
+/* ====== RNG con semilla ====== */
 function xmur3(str){ let h=1779033703^str.length; for(let i=0;i<str.length;i++){ h=Math.imul(h^str.charCodeAt(i),3432918353); h=(h<<13)|(h>>>19);} return function(){ h=Math.imul(h^(h>>>16),2246822507); h=Math.imul(h^(h>>>13),3266489909); return (h^(h>>>16))>>>0; } }
 function mulberry32(a){ return function(){ let t=a+=0x6D2B79F5; t=Math.imul(t^(t>>>15), t|1); t^= t + Math.imul(t^(t>>>7), t|61); return ((t^(t>>>14))>>>0)/4294967296; } }
 function shuffle(arr, rng){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(rng()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]];} return arr; }
@@ -183,7 +282,6 @@ let answers = saved.answers || {};
 let lockedUntil = Number.isInteger(saved.lockedUntil) ? saved.lockedUntil : -1;
 
 if (!order) {
-  // Mismo banco (40) para todos, solo cambia el ORDEN por token
   const seed = xmur3(token)();
   const rng = mulberry32(seed);
   order = [...Array(QUESTION_BANK.length).keys()];
@@ -232,7 +330,6 @@ function render(){
     optionsEl.appendChild(div);
   });
 
-  // Bloqueo sin volver atrás (la pregunta actual queda bloqueada al pasar)
   const locked = currentIndex <= lockedUntil;
   optionsEl.querySelectorAll('input[type=radio]').forEach(inp => inp.disabled = locked);
   btnNext.textContent = (currentIndex === TOTAL_Q - 1) ? 'Entregar' : 'Siguiente';
@@ -270,28 +367,47 @@ function computeScore(){
   }
   return { correct, perBlock };
 }
-function submitExam(auto=false){
+const fmt1 = (n)=> (Number.isInteger(n)? String(n) : n.toFixed(1));
+
+async function submitExam(auto=false){
   btnNext.disabled = true; btnFinish.disabled = true;
   optionsEl.querySelectorAll('input').forEach(i => i.disabled = true);
 
+  if (lostFocusStarted!==null){ lostFocusMs += (Date.now()-lostFocusStarted); lostFocusStarted=null; }
+
   const now = Date.now();
   const usedMs = Math.min(now, expiresAt) - startedAt;
-  const { correct, perBlock } = computeScore();
-  const pct = Math.round((correct / TOTAL_Q) * 100);
 
+  const { correct, perBlock } = computeScore();
+  const penalizedEvents = Math.max(0, violationCount - MAX_FREE_VIOLATIONS);
+  const penalties = penalizedEvents * PENALTY_POINTS_PER_EVENT;
+  const correctedCorrect = Math.max(0, correct - penalties);
+  const pct = Math.round((correctedCorrect / TOTAL_Q) * 100);
+
+  // Mostrar resultados
   document.getElementById('exam-view').classList.add('hidden');
   document.getElementById('result-view').classList.remove('hidden');
   document.getElementById('score-pct').textContent = `${pct}%`;
-  document.getElementById('score-detail').textContent =
-    `Aciertos: ${correct}/${TOTAL_Q} · Tiempo usado: ${Math.floor(usedMs/60000)}:${pad(Math.floor((usedMs%60000)/1000))}`;
 
-  const tags = document.getElementById('tags'); tags.innerHTML = '';
-  Object.entries(perBlock).forEach(([block, v]) => {
-    const span = document.createElement('span');
-    span.className = 'tag'; span.textContent = `${block}: ${v.ok}/${v.total}`; tags.appendChild(span);
+  const timeUsedTxt = `${Math.floor(usedMs/60000)}:${pad(Math.floor((usedMs%60000)/1000))}`;
+  document.getElementById('mini-line').textContent = `Aciertos: ${correct}/${TOTAL_Q} · Tiempo usado: ${timeUsedTxt}`;
+
+  const pillsEl = document.getElementById('block-pills');
+  pillsEl.innerHTML = '';
+  const orderForPills = ['Logica','Comport','Procesamiento','IA','Dash'];
+  orderForPills.forEach(block => {
+    if (perBlock[block]){
+      const v = perBlock[block];
+      const pill = document.createElement('span');
+      pill.className = 'pill';
+      pill.textContent = `${block}: ${v.ok}/${v.total}`;
+      pillsEl.appendChild(pill);
+    }
   });
 
-  // Filas detalladas
+  cleanupProctoring();
+
+  // Preparar filas para PDF
   const rows = [];
   for (let i=0;i<TOTAL_Q;i++){
     const q = getQ(i);
@@ -306,37 +422,49 @@ function submitExam(auto=false){
     });
   }
   const report = {
+    candidateName,
     candidateToken: token,
     startedAt, finishedAt: Date.now(), expiresAt, durationMinutes: duration,
-    score: { total: TOTAL_Q, correct, percent: pct }, perBlock,
-    unanswered: rows.filter(r => r.selectedIndex === null).length, rows
+    score: {
+      total: TOTAL_Q,
+      rawCorrect: correct,
+      penalties: Number(penalties.toFixed(1)),
+      corrected: Number(correctedCorrect.toFixed(1)),
+      percent: pct
+    },
+    perBlock,
+    proctoring: {
+      violationCount,
+      penaltyCount: penalizedEvents,
+      lostFocusSeconds: Math.round(lostFocusMs/1000)
+    },
+    timeUsed: timeUsedTxt,
+    unanswered: rows.filter(r => r.selectedIndex === null).length,
+    rows
   };
 
-  // Descargas
-  document.getElementById('btn-json').onclick = () => downloadJSON(report, `reporte_supervitec_${token}.json`);
-  document.getElementById('btn-csv').onclick  = () => downloadCSV(rows,   `reporte_supervitec_${token}.csv`);
-  document.getElementById('btn-pdf').onclick  = async () => generatePDF(report);
+  // Generar PDF (auto descarga) + intento de envío por correo
+  const { base64, filename } = await generatePDF(report, true);
+  try {
+    await fetch('/api/send-report', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({
+        to: "carlosnr9@gmail.com",
+        candidateName,
+        filename,
+        pdfBase64: base64,
+        meta: { percent: pct, corrected: report.score.corrected, violations: violationCount }
+      })
+    });
+  } catch(e) {
+    console.warn('No se pudo enviar el correo (continuamos):', e);
+  }
 
-  localStorage.removeItem('sv_exam_pwd_ok');
+  document.getElementById('btn-pdf').onclick = async () => { await generatePDF(report, true); };
 }
 
-/* ====== Utilidades de descarga ====== */
-function downloadJSON(obj, filename){
-  const blob = new Blob([JSON.stringify(obj, null, 2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob); const a = document.createElement('a');
-  a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url);
-}
-function downloadCSV(rows, filename){
-  const headers = ['orderIndex','questionId','block','prompt','selectedIndex','selectedText','correctIndex','correctText','isCorrect','explain'];
-  const csv = [headers.join(',')].concat(rows.map(r => headers.map(h => {
-    const v = r[h] ?? ''; const s = String(v).replace(/"/g,'""'); return `"${s}"`;
-  }).join(','))).join('\n');
-  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob); const a = document.createElement('a');
-  a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url);
-}
-
-/* ====== PDF con logo ====== */
+/* ====== PDF con logo (márgenes corregidos para “Correcta”) ====== */
 async function loadImageAsDataURL(src = 'logo.png') {
   const res = await fetch(src);
   const blob = await res.blob();
@@ -346,12 +474,10 @@ async function loadImageAsDataURL(src = 'logo.png') {
     reader.readAsDataURL(blob);
   });
 }
-async function generatePDF(report) {
+async function generatePDF(report, autoDownload=true) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'pt', format: 'A4' });
-  const pageW = doc.internal.pageSize.getWidth();
-  const marginX = 40;
-  let y = 40;
+  const marginX = 40; let y = 40;
 
   try {
     const logo = await loadImageAsDataURL('logo.png');
@@ -364,35 +490,78 @@ async function generatePDF(report) {
   y += 72;
 
   const fmt = ts => new Date(ts).toLocaleString();
+  const n = report.score;
+  doc.text(`Aspirante: ${report.candidateName}`, marginX, y); y += 16;
   doc.text(`Token: ${report.candidateToken}`, marginX, y); y += 16;
-  doc.text(`Inicio: ${fmt(report.startedAt)}   |   Fin: ${fmt(report.finishedAt)}`, marginX, y); y += 16;
-  doc.text(`Duración: ${report.durationMinutes} min   |   Aciertos: ${report.score.correct}/${report.score.total}   |   Nota: ${report.score.percent}%`, marginX, y);
+  doc.text(`Inicio: ${fmt(report.startedAt)}   |   Fin: ${fmt(report.finishedAt)}   |   Duración: ${report.durationMinutes} min   |   Tiempo usado: ${report.timeUsed}`, marginX, y); y += 16;
+  doc.text(`Aciertos: ${n.rawCorrect}/${n.total}   |   Penalización total: -${fmt1(n.penalties)}   |   Nota final: ${fmt1(n.corrected)}/${n.total} (${n.percent}%)`, marginX, y);
   y += 24;
 
-  // Resumen por bloque
+  // Desglose por bloque
   doc.setFont('helvetica', 'bold'); doc.text('Desglose por bloque', marginX, y); doc.setFont('helvetica', 'normal');
   const perBlockRows = Object.entries(report.perBlock).map(([block, v]) => [block, `${v.ok}/${v.total}`, `${Math.round((v.ok / v.total) * 100)}%`]);
-  doc.autoTable({ startY: y + 6, head: [['Bloque','Aciertos','Porcentaje']], body: perBlockRows, margin:{left:marginX, right:marginX}, styles:{fontSize:10}, headStyles:{fillColor:[34,197,94]} });
-
-  // Incorrectas
-  let afterBlockY = doc.lastAutoTable.finalY + 18;
-  const wrong = report.rows.filter(r => !r.isCorrect);
-  doc.setFont('helvetica', 'bold'); doc.text(`Preguntas incorrectas (${wrong.length})`, marginX, afterBlockY);
-  doc.setFont('helvetica', 'normal');
-  const wrongBody = wrong.map(r => [r.orderIndex, r.block, r.prompt, r.selectedText ?? '—', r.correctText]);
   doc.autoTable({
-    startY: afterBlockY + 6,
-    head: [['#','Bloque','Pregunta','Tu respuesta','Correcta']],
-    body: wrongBody, margin:{left:marginX, right:marginX}, styles:{fontSize:9, cellWidth:'wrap'},
-    headStyles:{fillColor:[251,191,36]},
-    columnStyles:{0:{cellWidth:24},1:{cellWidth:70},2:{cellWidth:260},3:{cellWidth:140},4:{cellWidth:140}}
+    startY: y + 6,
+    head: [['Bloque','Aciertos','Porcentaje']],
+    body: perBlockRows,
+    margin:{left:marginX, right:marginX},
+    styles:{fontSize:10},
+    headStyles:{fillColor:[34,197,94]}
   });
 
-  let endY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 18 : afterBlockY + 40;
+  // Integridad
+  let afterBlockY = doc.lastAutoTable.finalY + 18;
+  doc.setFont('helvetica', 'bold'); doc.text('Controles de integridad', marginX, afterBlockY); doc.setFont('helvetica', 'normal');
+  const integ = [
+    ['Eventos de salida/cambio de pestaña', String(report.proctoring.violationCount)],
+    ['Eventos penalizados (a partir de la 3ª)', String(report.proctoring.penaltyCount)],
+    ['Penalización total (puntos)', String(fmt1(n.penalties))],
+    ['Segundos fuera de foco', String(report.proctoring.lostFocusSeconds)]
+  ];
+  doc.autoTable({
+    startY: afterBlockY + 6,
+    head:[['Métrica','Valor']],
+    body: integ,
+    margin:{left:marginX, right:marginX},
+    styles:{fontSize:10},
+    headStyles:{fillColor:[251,191,36]}
+  });
+
+  // Preguntas incorrectas — AJUSTE DE ANCHOS para que “Correcta” no se salga
+  let afterIntegY = doc.lastAutoTable.finalY + 18;
+  const wrong = report.rows.filter(r => !r.isCorrect);
+  doc.setFont('helvetica', 'bold'); doc.text(`Preguntas incorrectas (${wrong.length})`, marginX, afterIntegY);
+  doc.setFont('helvetica', 'normal');
+  const wrongBody = wrong.map(r => [r.orderIndex, r.block, r.prompt, r.selectedText ?? '—', r.correctText]);
+
+  // Página A4 en pt: ancho ~595; con márgenes 40+40 => 515 pt de tabla
+  // Suma propuesta: 24 + 60 + 220 + 105 + 106 = 515 (encaja exacto)
+  doc.autoTable({
+    startY: afterIntegY + 6,
+    head: [['#','Bloque','Pregunta','Respuesta marcada','Correcta']],
+    body: wrongBody,
+    margin:{left:marginX, right:marginX},
+    styles:{fontSize:9, cellPadding:3, overflow:'linebreak'}, // forzar salto de línea
+    headStyles:{fillColor:[148,163,184]},
+    columnStyles:{
+      0:{cellWidth:24},
+      1:{cellWidth:60},
+      2:{cellWidth:220},
+      3:{cellWidth:105},
+      4:{cellWidth:106} // “Correcta” ya no se sale
+    }
+  });
+
+  let endY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 18 : afterIntegY + 40;
   doc.setFont('helvetica','italic'); doc.setFontSize(10);
   doc.text('Generado automáticamente por el sistema de evaluación de SuperviTEC PRO.', marginX, endY);
 
-  doc.save(`informe_supervitec_${report.candidateToken}.pdf`);
+  const filename = `informe_supervitec_${report.candidateToken}.pdf`;
+  if (autoDownload) doc.save(filename);
+
+  const dataUri = doc.output('datauristring');
+  const base64 = dataUri.split(',')[1];
+  return { base64, filename };
 }
 </script>
 </body>
